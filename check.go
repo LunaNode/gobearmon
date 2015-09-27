@@ -181,7 +181,11 @@ func checkInit() {
 			command = "ping6"
 		}
 
-		cmd := exec.Command(command, "-c", "5", "-w", "10", params.Target)
+		if strings.ContainsAny(params.Target, "$&<>!/\\\"'") {
+			return errors.New("ping target contains invalid characters")
+		}
+
+		cmd := exec.Command(command, "-c", "5", "-w", "10", "--", params.Target)
 		output, err := cmd.Output()
 		if err != nil {
 			return errors.New("failed to run ping command")
