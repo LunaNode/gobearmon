@@ -61,6 +61,12 @@ func (this *Controller) handle(conn net.Conn) {
 	defer conn.Close()
 	in := bufio.NewReader(conn)
 
+	password, err := in.ReadString('\n')
+	if err != nil || len(password) == 0 || password[:len(password) - 1] != cfg.Default.Password {
+		log.Printf("controller: terminating connection from %s due to incorrect password", conn.RemoteAddr().String())
+		return
+	}
+
 	for {
 		line, err := in.ReadString('\n')
 		if err != nil {

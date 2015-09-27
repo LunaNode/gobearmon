@@ -82,6 +82,12 @@ func (this *ViewServer) handle(conn net.Conn) {
 	defer conn.Close()
 	in := bufio.NewReader(conn)
 
+	password, err := in.ReadString('\n')
+	if err != nil || len(password) == 0 || password[:len(password) - 1] != cfg.Default.Password {
+		log.Printf("viewserver: terminating connection from %s due to incorrect password", conn.RemoteAddr().String())
+		return
+	}
+
 	for {
 		line, err := in.ReadString('\n')
 		if err != nil {
@@ -111,6 +117,7 @@ func (this *ViewServer) ping(controller string) {
 				time.Sleep(30 * time.Second)
 				continue
 			}
+			conn.Write([]byte(cfg.Default.Password + "\n"))
 			in = bufio.NewReader(conn)
 		}
 

@@ -47,6 +47,7 @@ func (this *Worker) updateController() {
 					time.Sleep(10 * time.Second)
 					continue
 				}
+				conn.Write([]byte(cfg.Default.Password + "\n"))
 				in = bufio.NewReader(conn)
 			} else {
 				time.Sleep(5 * time.Second)
@@ -149,6 +150,7 @@ func (this *Worker) updateView() {
 				time.Sleep(10 * time.Second)
 				continue
 			}
+			conn.Write([]byte(cfg.Default.Password + "\n"))
 			in = bufio.NewReader(conn)
 		}
 

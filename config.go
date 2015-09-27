@@ -6,6 +6,7 @@ import "log"
 
 type DefaultConfig struct {
 	Debug bool
+	Password string
 }
 
 type ControllerConfig struct {
