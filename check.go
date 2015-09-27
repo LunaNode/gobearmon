@@ -9,7 +9,6 @@ import "io"
 import "io/ioutil"
 import "net"
 import "net/http"
-import "net/url"
 import "os/exec"
 import "strconv"
 import "strings"
@@ -69,11 +68,6 @@ func checkInit() {
 			}
 		}
 
-		targetUrl, err := url.Parse(params.Url)
-		if err != nil {
-			return errors.New(fmt.Sprintf("failed to parse provided url: %s", err.Error()))
-		}
-
 		client := &http.Client{
 			Timeout: time.Duration(params.Timeout) * time.Second,
 			Transport: &http.Transport{
@@ -93,12 +87,11 @@ func checkInit() {
 			body = ioutil.NopCloser(strings.NewReader(params.Body))
 		}
 
-		request := &http.Request{
-			Method: params.Method,
-			URL: targetUrl,
-			Header: headers,
-			Body: body,
+		request, err := http.NewRequest(params.Method, params.Url, body)
+		if err != nil {
+			return errors.New(fmt.Sprintf("error creating HTTP request: %s", err.Error()))
 		}
+		request.Header = headers
 
 		if params.Username != "" {
 			request.SetBasicAuth(params.Username, params.Password)
