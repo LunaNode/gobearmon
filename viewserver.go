@@ -2,6 +2,7 @@ package gobearmon
 
 import "bufio"
 import "encoding/json"
+import "fmt"
 import "log"
 import "net"
 import "strings"
@@ -71,6 +72,7 @@ func (this *ViewServer) updatePing(controller string, result bool) {
 			}
 			if this.activeController == "" {
 				log.Printf("viewserver: warning: controller %s failed, but no one found to replace", controller)
+				mailAdmin("gobearmon: controller failed without replacement", fmt.Sprintf("controller %s failed without replacement", controller))
 			} else {
 				log.Printf("viewserver: failover from %s to %s", controller, this.activeController)
 			}

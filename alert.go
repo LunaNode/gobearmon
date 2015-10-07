@@ -1,6 +1,5 @@
 package gobearmon
 
-import "gopkg.in/gomail.v1"
 import "github.com/sfreiberg/gotwilio"
 
 import "errors"
@@ -39,14 +38,7 @@ func alertInit() {
 			body = fmt.Sprintf("Check [%s] is now %s: %s", check.Name, result.Status, result.Message)
 		}
 		body += fmt.Sprintf("\n\nID: %d\nName: %s\nType: %s\nData: %s\n\ngobearmon", check.Id, check.Name, check.Type, check.Data)
-
-		msg := gomail.NewMessage()
-		msg.SetHeader("From", cfg.Smtp.From)
-		msg.SetHeader("To", data)
-		msg.SetHeader("Subject", subject)
-		msg.SetBody("text/plain", body)
-		mailer := gomail.NewMailer(cfg.Smtp.Host, cfg.Smtp.Username, cfg.Smtp.Password, cfg.Smtp.Port)
-		return mailer.Send(msg)
+		return mail(subject, body, data)
 	}
 
 	alertFuncs["http"] = func(data string, check *Check, result *CheckResult, db *sql.DB) error {

@@ -4,6 +4,7 @@ import "bufio"
 import "database/sql"
 import "encoding/json"
 import "errors"
+import "fmt"
 import "log"
 import "math/rand"
 import "net"
@@ -17,6 +18,7 @@ type Controller struct {
 	Confirmations int
 	mu sync.Mutex
 	checks map[CheckId]*Check
+	reloadErrorCount int
 }
 
 func (this *Controller) Start() {
@@ -240,11 +242,24 @@ func (this *Controller) report(check *Check, result *CheckResult) error {
 	return nil
 }
 
+func (this *Controller) incrementReloadError() {
+	var shouldNotify bool
+	this.mu.Lock()
+	this.reloadErrorCount++
+	shouldNotify = this.reloadErrorCount >= 10 && this.reloadErrorCount % 10 == 0
+	this.mu.Unlock()
+
+	if shouldNotify {
+		mailAdmin("gobearmon: successive reload errors", fmt.Sprintf("Got %d successive reload errors!", this.reloadErrorCount))
+	}
+}
+
 func (this *Controller) reload() {
 	db := this.randomDB()
 	rows, err := db.Query("SELECT id, name, type, data, check_interval, delay, status FROM checks")
 	if err != nil {
 		log.Printf("controller: reload error on query: %s", err.Error())
+		this.incrementReloadError()
 		return
 	}
 
@@ -258,6 +273,7 @@ func (this *Controller) reload() {
 		check.SetStatusFromString(statusString)
 		if err != nil {
 			log.Printf("controller: reload error on scan: %s", err.Error())
+			this.incrementReloadError()
 			return
 		}
 		existCheckIds[check.Id] = true
@@ -266,6 +282,7 @@ func (this *Controller) reload() {
 
 	this.mu.Lock()
 	defer this.mu.Unlock()
+	this.reloadErrorCount = 0
 
 	// insert/update
 	for _, dbCheck := range dbChecks {

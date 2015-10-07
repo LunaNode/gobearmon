@@ -26,6 +26,7 @@ type SmtpConfig struct {
 	From string
 	Username string
 	Password string
+	Admin string
 }
 
 type TwilioConfig struct {
