@@ -234,7 +234,10 @@ func (this *Controller) report(check *Check, result *CheckResult) error {
 			time.Sleep(30 * time.Second)
 			for _, alert := range failedAlerts {
 				err := DoAlert(alert, check, result, this.randomDB())
-				log.Printf("permanently failed to alert %s/%s: %s", alert.Type, alert.Data, err.Error())
+
+				if err != nil {
+					log.Printf("permanently failed to alert %s/%s: %s", alert.Type, alert.Data, err.Error())
+				}
 			}
 		}()
 	}
