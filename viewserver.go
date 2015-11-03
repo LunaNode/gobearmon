@@ -60,8 +60,10 @@ func (this *ViewServer) updatePing(controller string, result bool) {
 			this.activeController = controller
 		}
 	} else {
-		log.Printf("viewserver: marking controller %s as down", controller)
-		this.pingStatus[controller] = 0
+		if this.pingStatus[controller] != 0 {
+			log.Printf("viewserver: marking controller %s as down", controller)
+			this.pingStatus[controller] = 0
+		}
 
 		if controller == this.activeController {
 			this.activeController = ""
