@@ -2,7 +2,6 @@ package gobearmon
 
 import "github.com/sfreiberg/gotwilio"
 
-import "errors"
 import "fmt"
 import "net/http"
 import "net/url"
@@ -18,7 +17,7 @@ func DoAlert(alert *Alert, check *Check, result *CheckResult, db *sql.DB) error 
 	}
 	f := alertFuncs[alert.Type]
 	if f == nil {
-		return errors.New(fmt.Sprintf("alert type %s does not exist", alert.Type))
+		return fmt.Errorf("alert type %s does not exist", alert.Type)
 	} else {
 		debugPrintf("executing alert %s/%s for check [%s]", alert.Type, alert.Data, check.Name)
 		return f(alert.Data, check, result, db)
@@ -69,7 +68,7 @@ func alertInit() {
 		if err != nil {
 			return err
 		} else if exception != nil {
-			return errors.New(fmt.Sprintf("error(%d/%d): %s (%s)", exception.Status, exception.Code, exception.Message, exception.MoreInfo))
+			return fmt.Errorf("error(%d/%d): %s (%s)", exception.Status, exception.Code, exception.Message, exception.MoreInfo)
 		}
 		db.Exec("INSERT INTO charges (check_id, type, data) VALUES (?, ?, ?)", check.Id, "sms", resp.Sid)
 		return nil
@@ -83,7 +82,7 @@ func alertInit() {
 		if err != nil {
 			return err
 		} else if exception != nil {
-			return errors.New(fmt.Sprintf("error(%d/%d): %s (%s)", exception.Status, exception.Code, exception.Message, exception.MoreInfo))
+			return fmt.Errorf("error(%d/%d): %s (%s)", exception.Status, exception.Code, exception.Message, exception.MoreInfo)
 		}
 		db.Exec("INSERT INTO charges (check_id, type, data) VALUES (?, ?, ?)", check.Id, "voice", resp.Sid)
 		return nil

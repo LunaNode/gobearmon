@@ -49,7 +49,7 @@ func checkInit() {
 		var params HttpCheckParams
 		err := json.Unmarshal([]byte(data), &params)
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to decode check parameters: %s", err.Error()))
+			return fmt.Errorf("failed to decode check parameters: %v", err)
 		}
 
 		// fix parameters
@@ -89,7 +89,7 @@ func checkInit() {
 
 		request, err := http.NewRequest(params.Method, params.Url, body)
 		if err != nil {
-			return errors.New(fmt.Sprintf("error creating HTTP request: %s", err.Error()))
+			return fmt.Errorf("error creating HTTP request: %v", err)
 		}
 		request.Header = headers
 
@@ -99,21 +99,21 @@ func checkInit() {
 
 		response, err := client.Do(request)
 		if err != nil {
-			return errors.New(fmt.Sprintf("error performing HTTP request: %s", err.Error()))
+			return fmt.Errorf("error performing HTTP request: %v", err)
 		}
 
 		if params.ExpectStatus != 0 && params.ExpectStatus != response.StatusCode {
-			return errors.New(fmt.Sprintf("status mismatch, expected %d but got %d", response.StatusCode, params.ExpectStatus))
+			return fmt.Errorf("status mismatch, expected %d but got %d", response.StatusCode, params.ExpectStatus)
 		}
 
 		if params.ExpectSubstring != "" {
 			bytes, err := ioutil.ReadAll(response.Body)
 			if err != nil {
-				return errors.New(fmt.Sprintf("error reading HTTP response body: %s", err.Error()))
+				return fmt.Errorf("error reading HTTP response body: %v", err)
 			}
 
 			if !strings.Contains(string(bytes), params.ExpectSubstring) {
-				return errors.New(fmt.Sprintf("expected substring [%s] was not found in the response body", params.ExpectSubstring))
+				return fmt.Errorf("expected substring [%s] was not found in the response body", params.ExpectSubstring)
 			}
 		}
 		response.Body.Close()
@@ -125,7 +125,7 @@ func checkInit() {
 		var params TcpCheckParams
 		err := json.Unmarshal([]byte(data), &params)
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to decode check parameters: %s", err.Error()))
+			return fmt.Errorf("failed to decode check parameters: %v", err)
 		}
 
 		if params.Timeout == 0 {
@@ -145,7 +145,7 @@ func checkInit() {
 
 		conn, err := net.DialTimeout(network, params.Address, time.Duration(params.Timeout) * time.Second)
 		if err != nil {
-			return errors.New(fmt.Sprintf("TCP connection error: %s", err.Error()))
+			return fmt.Errorf("TCP connection error: %v", err)
 		}
 		defer conn.Close()
 
@@ -153,16 +153,16 @@ func checkInit() {
 			if params.Payload != "" {
 				_, err := conn.Write([]byte(params.Payload + "\n"))
 				if err != nil {
-					return errors.New(fmt.Sprintf("failed to send payload: %s", err.Error()))
+					return fmt.Errorf("failed to send payload: %v", err)
 				}
 			}
 
 			in := bufio.NewReader(conn)
 			str, err := in.ReadString('\n')
 			if err != nil {
-				return errors.New(fmt.Sprintf("failed to read response: %s", err.Error()))
+				return fmt.Errorf("failed to read response: %v", err)
 			} else if !strings.Contains(str, params.Expect) {
-				return errors.New(fmt.Sprintf("response mismatch, expected [%s] but got [%s]", params.Expect, strings.TrimSpace(str)))
+				return fmt.Errorf("response mismatch, expected [%s] but got [%s]", params.Expect, strings.TrimSpace(str))
 			}
 		}
 
@@ -173,7 +173,7 @@ func checkInit() {
 		var params IcmpCheckParams
 		err := json.Unmarshal([]byte(data), &params)
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to decode check parameters: %s", err.Error()))
+			return fmt.Errorf("failed to decode check parameters: %v", err)
 		}
 
 		command := "ping"
@@ -188,7 +188,7 @@ func checkInit() {
 		cmd := exec.Command(command, "-c", "5", "-w", "10", "--", params.Target)
 		output, err := cmd.Output()
 		if err != nil {
-			return errors.New("failed to run ping command")
+			return fmt.Errorf("failed to run ping command: %v", err)
 		}
 
 		lines := strings.Split(string(output), "\n")
@@ -200,7 +200,7 @@ func checkInit() {
 				if err != nil {
 					return errors.New("failed to parse ping percent packet loss")
 				} else if percentage == 100 || (percentage > 30 && params.PacketLoss) {
-					return errors.New(fmt.Sprintf("ping: %d%% packet loss", percentage))
+					return fmt.Errorf("ping: %d%% packet loss", percentage)
 				} else {
 					return nil
 				}
@@ -214,7 +214,7 @@ func checkInit() {
 		var params SslExpireCheckParams
 		err := json.Unmarshal([]byte(data), &params)
 		if err != nil {
-			return errors.New(fmt.Sprintf("failed to decode check parameters: %s", err.Error()))
+			return fmt.Errorf("failed to decode check parameters: %v", err)
 		}
 
 		conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 15 * time.Second}, "tcp", params.Address, &tls.Config{InsecureSkipVerify: true})
@@ -232,7 +232,7 @@ func checkInit() {
 		cert := state.PeerCertificates[0]
 		daysRemaining := int(cert.NotAfter.Sub(time.Now()).Hours() / 24)
 		if daysRemaining <= params.Days {
-			return errors.New(fmt.Sprintf("certificate (%s) expires in %d days", cert.Subject.CommonName, daysRemaining))
+			return fmt.Errorf("certificate (%s) expires in %d days", cert.Subject.CommonName, daysRemaining)
 		}
 		return nil
 	}
