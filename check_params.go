@@ -33,3 +33,10 @@ type SslExpireCheckParams struct {
 	Address string `json:"address"`
 	Days int `json:"days"`
 }
+
+type DnsCheckParams struct {
+	Server string `json:"server"` // optionally force to use this DNS server; form is address:port
+	Name string `json:"name"` // name to query
+	Type string `json:"type"` // DNS record type, e.g. A or CNAME
+	Expect string `json:"expect"` // expected response
+}

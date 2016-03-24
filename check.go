@@ -14,6 +14,8 @@ import "strconv"
 import "strings"
 import "time"
 
+import "github.com/miekg/dns"
+
 type CheckFunc func(string) error
 var checkFuncs map[string]CheckFunc
 
@@ -188,7 +190,11 @@ func checkInit() {
 		cmd := exec.Command(command, "-c", "5", "-w", "10", "--", params.Target)
 		output, err := cmd.Output()
 		if err != nil {
-			return fmt.Errorf("failed to run ping command: %v", err)
+			// only fail if it is not an exit code based error
+			_, ok := err.(*exec.ExitError)
+			if !ok {
+				return fmt.Errorf("failed to run ping command: %v", err)
+			}
 		}
 
 		lines := strings.Split(string(output), "\n")
@@ -235,5 +241,58 @@ func checkInit() {
 			return fmt.Errorf("certificate (%s) expires in %d days", cert.Subject.CommonName, daysRemaining)
 		}
 		return nil
+	}
+
+	checkFuncs["dns"] = func(data string) error {
+		var params DnsCheckParams
+		err := json.Unmarshal([]byte(data), &params)
+		if err != nil {
+			return fmt.Errorf("failed to decode check parameters: %v", err)
+		}
+
+		dnsTypeMap := map[string]uint16{
+			"a": dns.TypeA,
+			"ns": dns.TypeNS,
+			"soa": dns.TypeSOA,
+			"ptr": dns.TypePTR,
+			"mx": dns.TypeMX,
+			"txt": dns.TypeTXT,
+			"aaaa": dns.TypeAAAA,
+			"srv": dns.TypeSRV,
+			"spf": dns.TypeSPF,
+		}
+
+		dnsType, ok := dnsTypeMap[strings.ToLower(params.Type)]
+		if !ok {
+			return fmt.Errorf("invalid record type: %s", params.Type)
+		}
+
+		dnsServer := cfg.DNS.Server
+		if params.Server != "" {
+			dnsServer = params.Server
+		}
+
+		client := dns.Client{}
+		msg := dns.Msg{}
+		msg.SetQuestion(dns.Fqdn(params.Name), dnsType)
+
+		reply, _, err := client.Exchange(&msg, dnsServer + ":53")
+		if err != nil {
+			return fmt.Errorf("query failed: %v", err)
+		} else if len(reply.Answer) == 0 {
+			return fmt.Errorf("query returned no results")
+		}
+
+		if params.Expect == "" {
+			return nil
+		}
+
+		for _, ans := range reply.Answer {
+			if strings.Contains(ans.String(), params.Expect) {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("query answer does not contain expected string (answer is %s, expected %s)", reply.Answer[0].String(), params.Expect)
 	}
 }

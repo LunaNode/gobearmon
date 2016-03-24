@@ -29,6 +29,10 @@ type SmtpConfig struct {
 	Admin string
 }
 
+type DNSConfig struct {
+	Server string
+}
+
 type TwilioConfig struct {
 	AccountSid string
 	AuthToken string
@@ -45,6 +49,7 @@ type Config struct {
 	Controller ControllerConfig
 	Worker WorkerConfig
 	Smtp SmtpConfig
+	DNS DNSConfig
 	Twilio TwilioConfig
 	ViewServer ViewServerConfig
 }
