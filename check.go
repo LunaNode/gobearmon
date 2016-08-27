@@ -80,11 +80,6 @@ func checkInit() {
 			},
 		}
 
-		headers := http.Header{"User-Agent": {"gobearmon"}}
-		for k, v := range params.Headers {
-			headers.Set(k, v)
-		}
-
 		var body io.ReadCloser
 		if len(params.Body) > 0 {
 			body = ioutil.NopCloser(strings.NewReader(params.Body))
@@ -94,7 +89,15 @@ func checkInit() {
 		if err != nil {
 			return fmt.Errorf("error creating HTTP request: %v", err)
 		}
-		request.Header = headers
+
+		request.Header = http.Header{"User-Agent": {"gobearmon"}}
+		for k, v := range params.Headers {
+			if k == "Host" {
+				request.Host = v
+			} else {
+				request.Header.Set(k, v)
+			}
+		}
 
 		if params.Username != "" {
 			request.SetBasicAuth(params.Username, params.Password)
