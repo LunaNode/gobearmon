@@ -73,6 +73,7 @@ func checkInit() {
 		client := &http.Client{
 			Timeout: time.Duration(params.Timeout) * time.Second,
 			Transport: &http.Transport{
+				DisableKeepAlives: true,
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: params.Insecure,
 				},
@@ -103,6 +104,7 @@ func checkInit() {
 		if err != nil {
 			return fmt.Errorf("error performing HTTP request: %v", err)
 		}
+		defer response.Body.Close()
 
 		if params.ExpectStatus != 0 && params.ExpectStatus != response.StatusCode {
 			return fmt.Errorf("status mismatch, expected %d but got %d", response.StatusCode, params.ExpectStatus)
@@ -118,7 +120,6 @@ func checkInit() {
 				return fmt.Errorf("expected substring [%s] was not found in the response body", params.ExpectSubstring)
 			}
 		}
-		response.Body.Close()
 
 		return nil
 	}
