@@ -107,7 +107,7 @@ func checkInit() {
 		defer response.Body.Close()
 
 		if params.ExpectStatus != 0 && params.ExpectStatus != response.StatusCode {
-			return fmt.Errorf("status mismatch, expected %d but got %d", response.StatusCode, params.ExpectStatus)
+			return fmt.Errorf("status mismatch, got %d but expected %d", response.StatusCode, params.ExpectStatus)
 		}
 
 		if params.ExpectSubstring != "" {
