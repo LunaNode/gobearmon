@@ -194,7 +194,7 @@ func (this *Controller) reportAndUpdate(check *Check, result *CheckResult) {
 }
 
 func (this *Controller) report(check *Check, result *CheckResult) error {
-	rows, err := this.randomDB().Query("SELECT contacts.type, contacts.data FROM contacts, alerts WHERE alerts.check_id = ? AND alerts.contact_id = contacts.id AND (alerts.type = 'both' OR alerts.type = ?)", check.Id, string(result.Status))
+	rows, err := this.randomDB().Query("SELECT contacts.type, contacts.data FROM contacts, alerts WHERE alerts.check_id = ? AND alerts.contact_id = contacts.id AND (alerts.type = 'both' OR alerts.type = ?) AND alerts.enabled = 1", check.Id, string(result.Status))
 	if err != nil {
 		return errors.New("database query failed")
 	}
@@ -261,7 +261,7 @@ func (this *Controller) incrementReloadError() {
 
 func (this *Controller) reload() {
 	db := this.randomDB()
-	rows, err := db.Query("SELECT id, name, type, data, check_interval, delay, status FROM checks")
+	rows, err := db.Query("SELECT id, name, type, data, check_interval, delay, status FROM checks WHERE enabled = 1")
 	if err != nil {
 		log.Printf("controller: reload error on query: %s", err.Error())
 		this.incrementReloadError()
