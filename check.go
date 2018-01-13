@@ -275,12 +275,15 @@ func checkInit() {
 		if params.Server != "" {
 			dnsServer = params.Server
 		}
+		if !strings.Contains(dnsServer, ":") {
+			dnsServer += ":53"
+		}
 
 		client := dns.Client{}
 		msg := dns.Msg{}
 		msg.SetQuestion(dns.Fqdn(params.Name), dnsType)
 
-		reply, _, err := client.Exchange(&msg, dnsServer + ":53")
+		reply, _, err := client.Exchange(&msg, dnsServer)
 		if err != nil {
 			return fmt.Errorf("query failed: %v", err)
 		} else if len(reply.Answer) == 0 {
