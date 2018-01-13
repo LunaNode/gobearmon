@@ -1,7 +1,7 @@
 gobearmon
 =========
 
-gobearmon is a distributed uptime monitoring system.
+gobearmon is a **distributed uptime monitoring system**.
 
 The basic uptime monitoring concept is simple:
 
@@ -27,13 +27,7 @@ These checks and configuration options are supported:
 * SSL Expiration: can configure the number of days before the certificate expires, e.g. send an alert if the certificate is expired or expiring within 10 days
 * DNS: can configure nameserver, record type, DNS name, and a string that should appear in the DNS response
 
-Checks are monitored with a multi-round approach to minimize erroneous notifications:
-
-* Each check is configured with an `interval` and a `delay`, and there is a global `confirmations` parameter.
-* The controller maintains a state change counter with each check.
-* The check action is performed every `interval` seconds. If the action fails but the check state is online, or if the action succeeds but the check state is offline, then the state change counter is incremented. Otherwise, the counter is reset to 0.
-* Once the counter reaches `delay+1`, the check state is flipped, and the controller performs all alerts associated with this state change.
-* When performing a check action, the controller first requests one worker to run the check. If the action result does not match the check state, then the controller requests `confirmations-1` additional workers to perform the check. The state change counter is only incremented if all workers return the same action result.
+**Monitoring.** Each check is configured with an `interval` and a `delay`, and there is a global `confirmations` parameter. The check action is performed every `interval` seconds. `confirmations` is how many workers need to agree before flipping the check state (from online to offline or offline to online), and `delay` is the number of intervals we need to see the new check state before flipping the state. For example, if a check is currently online with `interval=60`, `confirmations=4`, and `delay=3`, then the check is only marked offline if the check action repeatedly fails for 3 minutes, and 4 workers agree that it fails.
 
 Contacts
 --------
@@ -72,6 +66,6 @@ Next, add a contact:
 
 	INSERT INTO contacts (type, data) VALUES ('email', 'admin@example.com');
 
-Finally, link the check and contact with an alert. For the check type, 'offline' means the contact will only be notified when the check goes offline, 'online' means only when it comes back online, and 'both' means notified in both cases.
+Finally, link the check and contact with an alert. For the check type, `offline` means the contact will only be notified when the check goes offline, `online` means only when it comes back online, and `both` means notified in both cases.
 
 	INSERT INTO alerts (check_id, contact_id, type) VALUES (1, 1, 'both');
